@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import dotenv from "dotenv";
 import { google } from "googleapis";
 import z from "zod";
@@ -14,6 +15,7 @@ const server = new McpServer({
 
 //tool function
 async function getMyCalendarDataByDate(date) {
+  // Initialize the Google Calendar API
   const calendar = google.calendar({
     version: "v3",
     auth: process.env.GOOGLE_API_KEY,
@@ -26,6 +28,7 @@ async function getMyCalendarDataByDate(date) {
   endOfDay.setUTCDate(endOfDay.getUTCDate() + 1);
 
   try {
+    // Fetch events from Google Calendar
     const res = await calendar.events.list({
       calendarId: "primary",
       timeMin: startOfDay.toISOString(),
@@ -37,6 +40,7 @@ async function getMyCalendarDataByDate(date) {
 
     const events = res.data.items || [];
 
+    // Process and format the event data
     const eventData = events.map((event) => {
       const start = event.start.dateTime || event.start.date;
       const end = event.end.dateTime || event.end.date;
@@ -81,3 +85,12 @@ server.tool(
     };
   }
 );
+
+//set transport
+async function init() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+}
+
+//call the initialization function
+init();
