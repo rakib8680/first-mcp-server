@@ -2,8 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import dotenv from "dotenv";
 import { google } from "googleapis";
-import z from "zod";
-import { version } from "zod/v4/core";
+import { z } from "zod";
 
 dotenv.config();
 
@@ -30,7 +29,7 @@ async function getMyCalendarDataByDate(date) {
   try {
     // Fetch events from Google Calendar
     const res = await calendar.events.list({
-      calendarId: "primary",
+      calendarId: process.env.GOOGLE_CALENDAR_ID,
       timeMin: startOfDay.toISOString(),
       timeMax: endOfDay.toISOString(),
       maxResults: 10,
@@ -67,14 +66,15 @@ server.tool(
   "getMyCalendarDataByDate",
   {
     description: "Get the calendar data for a given date",
-    date: z.string(),
-    refine:
-      ((date) => !isNaN(Date.parse(date)),
-      {
-        message: "Invalid date format, Please provide a valid date string",
+    parameters: z.object({
+      date: z.string().refine((val) => !isNaN(Date.parse(val)), {
+        message:
+          "Invalid date format. Please provide a valid date string like 'YYYY-MM-DD'.",
       }),
+    }),
   },
   async ({ date }) => {
+    console.log(`[MCP-Server] Received request for date: ${date}`);
     return {
       content: [
         {
